@@ -109,7 +109,7 @@ namespace antinufit
     std::cout << "Writing complete!" << std::endl
               << std::endl;
   }
-
+  // output a surv_prob for given nuE, sintheta21 and delM21^2
   double OscGrid::Evaluate(double nuEnergy, double dmsq21, double ssqth12)
   {
     /*

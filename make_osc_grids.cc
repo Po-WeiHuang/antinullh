@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
   double maxSsqth12 = oscGridConfig.GetMaxSsqth12();
   int numValsSsqth12 = oscGridConfig.GetNumValsSsqth12();
 
-  // First read the reactor distance info
+  // First read the reactor distance info  
   std::unordered_map<int, double> indexDistance = LoadIndexDistanceMap(reactorsjsonfile);
 
   for (std::unordered_map<int, double>::iterator it = indexDistance.begin(); it != indexDistance.end(); ++it)
@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
     std::cout << "Making grid " << oscGridFileName << std::endl;
     OscGrid *oscGrid = new OscGrid(oscGridFileName, it->second, minE, maxE, numValsE, minDm21sq, maxDm21sq, numValsDm21sq, minSsqth12, maxSsqth12, numValsSsqth12);
     oscGrid->CalcGrid();
+    // write surv_prob for every single core
     oscGrid->Write();
 
     delete oscGrid;

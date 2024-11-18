@@ -118,8 +118,10 @@ void MakeDataSet(const std::vector<std::string> &filenames_,
     Double_t distance;
     Double_t neutrinoEnergy;
 
-    chain.SetBranchAddress("energy", &energy);
-    chain.SetBranchAddress("alphaNReactorIBD", &alphaNClassifier);
+    //chain.SetBranchAddress("energy", &energy);
+    chain.SetBranchAddress("promptEcorr", &energy);
+    //chain.SetBranchAddress("alphaNReactorIBD", &alphaNClassifier);
+    chain.SetBranchAddress("post_prob", &alphaNClassifier);
     chain.SetBranchAddress("parentKE1", &neutrinoEnergy);
     chain.SetBranchAddress("parentMeta1", &reactorName);
 
@@ -216,7 +218,8 @@ int main(int argc, char *argv[])
       std::cout << "\t" << files.at(i) << std::endl;
     std::cout << "to " << outName << std::endl;
 
-    MakeDataSet(files, baseDir, "output", outName, reactornameIndex);
+    //MakeDataSet(files, baseDir, "output", outName, reactornameIndex);
+    MakeDataSet(files, baseDir, "PromptT", outName, reactornameIndex);
   }
 
   return 0;

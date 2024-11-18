@@ -28,7 +28,7 @@ void llh_scan(const std::string &mcmcConfigFile_,
               const std::string &oscGridConfigFile_)
 {
   Rand::SetSeed(0);
-
+  
   // Load up the fit configuration information
   FitConfig mcConfig;
   FitConfigLoader mcLoader(mcmcConfigFile_);
@@ -37,12 +37,12 @@ void llh_scan(const std::string &mcmcConfigFile_,
   double livetime = mcConfig.GetLivetime();
   bool beestonBarlowFlag = mcConfig.GetBeestonBarlow();
   std::string outDir = mcConfig.GetOutDir();
-  ParameterDict constrMeans = mcConfig.GetConstrMeans();
+  ParameterDict constrMeans = mcConfig.GetConstrMeans();// <string:double> = <fitparname:val>
   ParameterDict constrSigmas = mcConfig.GetConstrSigmas();
   ParameterDict mins = mcConfig.GetMinima();
   ParameterDict maxs = mcConfig.GetMaxima();
   ParameterDict noms = mcConfig.GetNominals();
-
+  
   struct stat st = {0};
   if (stat(outDir.c_str(), &st) == -1)
     mkdir(outDir.c_str(), 0700);
@@ -59,7 +59,7 @@ void llh_scan(const std::string &mcmcConfigFile_,
   std::vector<std::string> dataObs = pdfConfig.GetDataBranchNames();
   ObsSet dataObsSet(dataObs);
   AxisCollection systAxes = DistBuilder::BuildAxes(pdfConfig, dataObs.size());
-
+  
   // Load up the systematics
   SystConfigLoader systLoader(systConfigFile_);
   SystConfig systConfig = systLoader.LoadActive();
@@ -70,24 +70,29 @@ void llh_scan(const std::string &mcmcConfigFile_,
   std::map<std::string, std::vector<std::string>> systTransObs = systConfig.GetTransObs();
   std::map<std::string, std::string> systFunctionNames = systConfig.GetFunctionNames();
   std::vector<std::string> fullParamNameVec;
-
+  
+  
   // Load up the oscillation probability grids
   OscGridConfigLoader oscGridLoader(oscGridConfigFile_);
   OscGridConfig oscGridConfig = oscGridLoader.Load();
   std::string outfilename = oscGridConfig.GetFilename();
   std::vector<OscGrid *> oscGridVec;
-
+  
   // First read the reactor distance info
   std::unordered_map<int, double> indexDistance = LoadIndexDistanceMap("reactors.json");
   for (std::unordered_map<int, double>::iterator it = indexDistance.begin(); it != indexDistance.end(); ++it)
   {
+    // vector of survival prob for various nu_E, sintheta12 delM12^2 for one single reactor in oscGrid
+    // will update to  a root files with surv_prob, but including all reactors 
     std::string oscGridFileName = outfilename + "_" + std::to_string(it->first) + ".csv";
     OscGrid* oscGrid = new OscGrid(oscGridFileName);
     oscGridVec.push_back(oscGrid);
   }
 
   // Loop over systematics and declare each one
-  std::map<std::string, Systematic *> systMap;
+  std::map<std::string, Systematic *> systMap;// sysMap will be  i.e. std::map{"energy_scale", "A systematic object knowing by oxo, such as scale_function object" } 
+  //systParamNames include all param_names from all systypes, like energy_scale, energy_scale_3d
+  // paramNameVec will include all param_names entries, like paramNameVec["osc_prob"] = ["theta12","deltam21"]  
   for (std::map<std::string, std::string>::iterator it = systType.begin(); it != systType.end(); ++it)
   {
     std::cout << "Constructing " << it->first << std::endl;
@@ -111,7 +116,7 @@ void llh_scan(const std::string &mcmcConfigFile_,
     syst->SetTransformationObs(systTransObs[it->first]);
     // All the "dimensions" of the dataset
     syst->SetDistributionObs(systDistObs[it->first]);
-    syst->Construct();
+    syst->Construct(); // construct systematic response matrices based on the type oxo recogise from paramNameVec 
     systMap[it->first] = syst;
   }
 
@@ -179,6 +184,7 @@ void llh_scan(const std::string &mcmcConfigFile_,
     for (std::map<std::string, Systematic *>::iterator it = systMap.begin(); it != systMap.end(); ++it)
     {
       // If group is "", we apply to all groups
+      // systGroup = 1d, 3d, precoil... // apply nominal sys into pdfs
       if (systGroup[it->first] == "" || std::find(pdfGroups.back().begin(), pdfGroups.back().end(), systGroup[it->first]) != pdfGroups.back().end())
       {
         double distInt = dist.Integral();
@@ -190,7 +196,9 @@ void llh_scan(const std::string &mcmcConfigFile_,
     // Now scale the Asimov component by expected rate, and also save pdf as a histo
     double rate = it->second.GetRate();
     dist.Scale(livetime * rate);
-    if (dist.GetNDims() != asimov.GetNDims())
+    // dist: a specific everttype's pdf 
+    // asimov = all pdf sum in reconenergy (after nominal sys applied) ; indivAsmvDists: a vector that includes all individual Asm dataset in reconenergy separately (after nominal sys applied)
+    if (dist.GetNDims() != asimov.GetNDims())  // for reactoribd especially: dist.GetNDims()
     {
       BinnedED marginalised = dist.Marginalise(dataObs);
       asimov.Add(marginalised);
@@ -236,10 +244,11 @@ void llh_scan(const std::string &mcmcConfigFile_,
     dataDist = asimov;
 
   return;
-
+  
   // Now build the likelihood
   BinnedNLLH lh;
-  // Set the buffer region
+  // Set the buffer region, so the buffer regions will not be considered into likelihood calculation
+  // Overflow is to put entries that outside the R.O.I be last/first bins 
   lh.SetBufferAsOverflow(true);
   lh.SetBuffer("energy", 50, 50);
   // Add our PDFs and data
@@ -257,19 +266,21 @@ void llh_scan(const std::string &mcmcConfigFile_,
   }
 
   for (ParameterDict::iterator it = constrMeans.begin(); it != constrMeans.end(); ++it)
-    lh.SetConstraint(it->first, it->second, constrSigmas.at(it->first));
+    lh.SetConstraint(it->first, it->second, constrSigmas.at(it->first));// penalty term
 
   // And finally bring it all together
-  lh.RegisterFitComponents();
+  lh.RegisterFitComponents(); 
 
   // Now onto the LLH Scan. First set the number of points in the scan
   int npoints = 150;
-  int countwidth = double(npoints) / double(5);
+  int countwidth = double(npoints) / double(5);// for printing
 
   // Initialise to nominal values
   ParameterDict parameterValues;
+  // i.e. mins = {"theta12 min":val, "deltam21 min": val .....}
+  // loop over all fit pars
   for (ParameterDict::iterator it = mins.begin(); it != mins.end(); ++it)
-    parameterValues[it->first] = noms[it->first];
+    parameterValues[it->first] = noms[it->first]; //get nominal val
 
   // If we have constraints, initialise to those
   for (ParameterDict::iterator it = constrMeans.begin(); it != constrMeans.end(); ++it)
@@ -282,7 +293,7 @@ void llh_scan(const std::string &mcmcConfigFile_,
   std::string outFileName = outDir + "/llh_scan.root";
   TFile *outFile = new TFile(outFileName.c_str(), "recreate");
 
-  // Loop over parameters
+  // Loop over parameters  
   for (ParameterDict::iterator it = mins.begin(); it != mins.end(); ++it)
   {
     // Get param name
@@ -315,6 +326,8 @@ void llh_scan(const std::string &mcmcConfigFile_,
         std::cout << i << "/" << npoints << " (" << double(i) / double(npoints) * 100 << "%)" << std::endl;
 
       // Set Parameters
+      // par for likelihood scan; i.e. if we wanna do energy_scale llh scan, here i+1 is the index of pointing to energy_scale in parval
+      // And we change this "test" parval to parameterValues[name], in which keeping other pars as nominal
       double parval = hScan->GetBinCenter(i + 1) * nom;
       double tempval = parameterValues[name];
       parameterValues[name] = parval;
@@ -336,17 +349,21 @@ void llh_scan(const std::string &mcmcConfigFile_,
     // hScanSam->Write();
     // hScanPen->Write();
   }
+  
   // Close file
   outFile->Close();
   std::cout << "Wrote scan to " << outFile->GetName() << std::endl;
 
   delete outFile;
+  
 }
 
 int main(int argc, char *argv[])
 {
-  if (argc != 5)
+  //if (argc != 5)
+  if (argc != 6)
   {
+    std::cout<< "argc "<<argc<<std::endl; 
     std::cout << "\nUsage: llh_scan <mcmc_config_file> <eve_config_file> <pdf_config_file> <syst_config_file> <oscgrid_config_file>" << std::endl;
     return 1;
   }
