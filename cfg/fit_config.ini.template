@@ -1,10 +1,10 @@
 [summary]
-datafile = 
+datafile = /data/snoplus3/weiii/antinu/mycuts/MCMCfits/prunedntuplepdfs
 asimov = 1
 iterations = 50000
 burn_in = 1000
 fit_dists = all
-output_directory =
+output_directory =/data/snoplus3/weiii/antinu/mycuts/MCMCfits/Fits
 
 n_steps = 35
 epsilon = 0.025

@@ -1,47 +1,47 @@
 [summary]
 active=reactor_nubar,geonu_U,geonu_Th,alphan_PRecoil,alphan_CScatter,alphan_OExcited
-inactive=
-orig_base_dir=
-pruned_ntup_dir=
+inactive=sideband
+orig_base_dir=/data/snoplus3/weiii/antinu/mycuts/Ntuple_afterPosterior
+pruned_ntup_dir=/data/snoplus3/weiii/antinu/mycuts/MCMCfits/prunedntuplepdfs
 
 [reactor_nubar]
 tex_label = Reactor-$\bar{\nu}$
-ntup_files =
+ntup_files =scaled_oscillated_ScintFit_2p2Reactoribd/scaled_oscillated*.root
 groups = osc_group,3d
 dimensions = 3
 
 [geonu_U]
 tex_label = U Geo $\bar{\nu}$
-ntup_files =
+ntup_files =Geoibd_U/*.root
 dimensions = 1
 groups = 1d
 
 [geonu_Th]
 tex_label = Th Geo $\bar{\nu}$
-ntup_files =
+ntup_files =Geoibd_Th/*.root
 dimensions = 1
 groups = 1d
 
 [alphan_PRecoil]
 tex_label = $\alpha-n$ Proton Recoil
-ntup_files =
+ntup_files =Alphan_Lab_13c/*.root
 groups = p_recoil,1d
 dimensions = 1
 
 [alphan_CScatter]
 tex_label = $\alpha-n$ Proton Ielastic Scatter
-ntup_files =
+ntup_files =Alphan_Lab_13c/*.root
 dimensions = 1
 groups = 1d
 
 [alphan_OExcited]
 tex_label = $\alpha-n$ Excited $^{16}$O
-ntup_files =
+ntup_files =Alphan_Lab_13c/*.root
 dimensions = 1
 groups = 1d
 
 [sideband]
 tex_label = Sideband
-ntup_files =
+ntup_files =*Bipo214*
 dimensions = 1
 groups = 1d

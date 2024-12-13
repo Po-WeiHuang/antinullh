@@ -189,6 +189,42 @@ namespace antinufit
 
         return fOscProb;
       };
+      ShapeFunction OscProbLightSterile = [&oscgridmap_, &indexdistancemap_](const ParameterDict &params, const std::vector<double> &obs_vals){
+         // baseline in km // nuEnergy in MeV
+        Double_t nuE_parent = 5.0;//obs_vals.at(2);
+        Double_t baseline = 150;//indexdistancemap_[obs_vals.at(1)];
+        Double_t fDmSqr21 = 7.55e-05;//params.at("deltam21");
+        Double_t fDmSqr01 = 0.0001;//params.at("deltam01");
+        Double_t fDmSqr32 = 2.453e-3;
+        Double_t fSSqrTheta12 = sin(params.at("theta12")) * sin(params.at("theta12"));//sin(33.31*3.14/180.) * sin(33.31*3.14/180.);
+        Double_t fSSqrTheta01 = sin(90.*3.14/180.) * sin(90.*3.14/180.);//sin(params.at("theta01")) * sin(params.at("theta01"));
+        Double_t fSSqrTheta13 = 0.0220; Double_t fCSqrTheta13 = 1 - fSSqrTheta13; 
+        Double_t fSSqrTheta23 = 0.564 ; Double_t fCSqrTheta23 = 1 - fSSqrTheta23;
+        Double_t fCSqrTheta01 = 1 - fSSqrTheta01; 
+        Double_t fCSqrTheta12 = 1 - fSSqrTheta12; 
+
+        // Declare quantities to use in loops
+        Double_t scale = scale = 1.267e3 * baseline / nuE_parent;
+        Double_t fOscProb = 0.0;
+
+        Double_t fDmSqr31 = fDmSqr32 + fDmSqr21;
+        Double_t fDmSqr02 = fDmSqr01 + fDmSqr21; // Normal Ordering
+
+        Double_t Sqrs_01 = pow(sin(scale*fDmSqr01),2); Double_t Sqrs_02 = pow(sin(scale*fDmSqr02),2);
+        Double_t Sqrs_12 = pow(sin(scale*fDmSqr21),2); Double_t Sqrs_13 = pow(sin(scale*fDmSqr31),2);
+        Double_t Sqrs_23 = pow(sin(scale*fDmSqr32),2); 
+
+        fOscProb = 1 - 4*( fSSqrTheta01*fCSqrTheta12*fCSqrTheta13*fCSqrTheta13*fCSqrTheta01*fCSqrTheta12*Sqrs_01 
+                    +  fSSqrTheta01*fCSqrTheta12*fSSqrTheta12*fCSqrTheta13*fCSqrTheta13*Sqrs_02
+                    +  fCSqrTheta01*fCSqrTheta12*fSSqrTheta12*fCSqrTheta13*fCSqrTheta13*Sqrs_12
+                    +  fCSqrTheta01*fCSqrTheta12*fSSqrTheta13*fCSqrTheta13*Sqrs_13
+                    +  fSSqrTheta12*fSSqrTheta13*fCSqrTheta13*Sqrs_23);
+        std::cout<<"baseline "<< baseline <<"nuE_parent "<<nuE_parent << " fDmSqr21 "<< fDmSqr21<< "fSSqrTheta12 "<<fSSqrTheta12
+                  << "fDmSqr01 "<<fDmSqr01 <<"fSSqrTheta01 "<<fSSqrTheta01<<" fOscProb "<< fOscProb<<std::endl;
+        return fOscProb;
+      };
+
+
 
       Shape *shape = new Shape("shape");
 
@@ -206,6 +242,16 @@ namespace antinufit
         shape->RenameParameter(paramnamevec_.at(0), "deltam21");
         shape->RenameParameter(paramnamevec_.at(1), "theta12");
         ParameterDict params({{"deltam21", paramvals_[paramnamevec_.at(0)]}, {"theta12", paramvals_[paramnamevec_.at(1)]}});
+        shape->SetParameters(params);
+      }
+      else if (function == "OscProbLightSterile")
+      {
+        shape->SetShapeFunction(OscProbLightSterile, paramnamevec_);
+        shape->RenameParameter(paramnamevec_.at(0), "deltam21");
+        shape->RenameParameter(paramnamevec_.at(1), "theta12");
+        shape->RenameParameter(paramnamevec_.at(2), "theta01");
+        shape->RenameParameter(paramnamevec_.at(3), "deltam01");
+        ParameterDict params({{"deltam21", paramvals_[paramnamevec_.at(0)]}, {"theta12", paramvals_[paramnamevec_.at(1)]}, {"theta01", paramvals_[paramnamevec_.at(2)]}, {"deltam01", paramvals_[paramnamevec_.at(3)]}});
         shape->SetParameters(params);
       }
       else

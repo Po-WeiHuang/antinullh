@@ -62,6 +62,10 @@ bin/auto_corrs: exec/auto_corrs.cc $(LIB)
 	mkdir -p bin
 	$(CXX)  exec/auto_corrs.cc $(INCLUDES) -w $(LIBRARYDIRS) $(LIBRARYNAMES) $(ROOT_FLAGS) $(G4_FLAGS) ${GSL_FLAGS} -larmadillo -o $@
 
+bin/sterile_llhscan: exec/sterile_llhscan.cc $(LIB)
+	mkdir -p bin
+	$(CXX)  exec/sterile_llhscan.cc $(INCLUDES) -w $(LIBRARYDIRS) $(LIBRARYNAMES) $(ROOT_FLAGS) $(G4_FLAGS) ${GSL_FLAGS} -larmadillo -o $@
+
 $(LIB) : $(OBJ_FILES)
 	mkdir -p $(LIB_DIR)
 	ar rcs  $@ $^
