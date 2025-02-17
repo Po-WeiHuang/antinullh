@@ -48,7 +48,7 @@ void MakeDataSet(const std::vector<std::string> &filenames_,
   TNtuple nt("pruned", "", "energy:nu_energy:reactorIndex:alphaNClassifier");
 
   // Read the original data
-  const std::string treeName = "output";
+  const std::string treeName = "PromptT";
   for (size_t iFile = 0; iFile < filenames_.size(); iFile++)
   {
     std::string fileName = baseDir_ + "/" + filenames_.at(iFile);
@@ -65,8 +65,8 @@ void MakeDataSet(const std::vector<std::string> &filenames_,
     Double_t distance;
     Double_t neutrinoEnergy;
 
-    chain.SetBranchAddress("energy", &energy);
-    chain.SetBranchAddress("alphaNReactorIBD", &alphaNClassifier);
+    chain.SetBranchAddress("promptEcorr", &energy);
+    chain.SetBranchAddress("Prompt_energy", &alphaNClassifier);
     chain.SetBranchAddress("parentKE1", &neutrinoEnergy);
     chain.SetBranchAddress("parentMeta1", &reactorName);
 

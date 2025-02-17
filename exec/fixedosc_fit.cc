@@ -297,14 +297,13 @@ void fixedosc_fit(const std::string &fitConfigFile_,
     }
     else // If a root file
     {
-
       TFile *dataFile = TFile::Open(dataPath.c_str(), "READ");
       if (!dataFile || dataFile->IsZombie())
       {
         std::cerr << "Error opening data file " << dataFile << std::endl;
         throw;
       }
-
+      
       // Get the list of keys in the file
       TList *keyList = dataFile->GetListOfKeys();
       if (!keyList)
@@ -320,8 +319,8 @@ void fixedosc_fit(const std::string &fitConfigFile_,
       {
         std::string className = key->GetClassName();
         std::string objectName = key->GetName();
-
-        if (className == "TTree")
+        std::cout<<"className "<<className<<std::endl;
+        if (className == "TNtuple")
         {
           // Load up the data set
           ROOTNtuple dataToFit(dataPath, objectName.c_str());
@@ -336,12 +335,20 @@ void fixedosc_fit(const std::string &fitConfigFile_,
           Histogram loaded = DistTools::ToHist(*dataHist);
           dataDist = BinnedED("data", loaded);
           dataDist.SetObservables(pdfConfig.GetDataBranchNames());
+          AxisCollection axes = DistBuilder::BuildAxes(pdfConfig,pdfConfig.GetDataAxisCount());
+
+          dataDist.SetAxes(axes);
+          const std::vector<std::string> p = pdfConfig.GetDataBranchNames();
+          for (size_t i = 0; i < p.size(); ++i) {
+            std::cout << "ObservableName "<<p[i] <<" "<<objectName.c_str()<< " "<<std::endl;
+          }
           break;
         }
       }
+      
     }
   }
-
+  IO::SaveHistogram(dataDist.GetHistogram(),  "histo.root");
   // Now build the likelihood
   BinnedNLLH lh;
   lh.SetBuffer("energy", 1, 14);
@@ -362,7 +369,7 @@ void fixedosc_fit(const std::string &fitConfigFile_,
 
   // And finally bring it all together
   lh.RegisterFitComponents();
-
+  
   // Initialise to nominal values
   ParameterDict parameterValues;
   for (ParameterDict::iterator it = mins.begin(); it != mins.end(); ++it)
@@ -381,7 +388,7 @@ void fixedosc_fit(const std::string &fitConfigFile_,
   min.SetMaxima(maxs);
   min.SetInitialValues(parameterValues);
   min.SetInitialErrors(sigmas);
-
+  
   FitResult res = min.Optimise(&lh);
   res.SetPrintPrecision(4);
   res.Print();
@@ -476,6 +483,7 @@ void fixedosc_fit(const std::string &fitConfigFile_,
   }
 
   std::cout << "Fit complete" << std::endl;
+  
 }
 
 int main(int argc, char *argv[])
