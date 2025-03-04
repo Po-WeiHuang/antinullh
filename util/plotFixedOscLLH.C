@@ -223,7 +223,7 @@ void plotFixedOscLLH(const char *filename = "fit_results.root")
     Profile.second->GetYaxis()->SetTitle("2#Deltaln(L)");
     Profile.second->GetYaxis()->SetTitleOffset(1.2);
     
-    Profile.second->Draw();
+    Profile.second->Draw("HIST");
 
     std::map<std::string,double> DelM_XVal = extractXForMinYAndYDiff_1sigma(Profile.second);
     double yMin = 0;
@@ -239,7 +239,7 @@ void plotFixedOscLLH(const char *filename = "fit_results.root")
     rightLine->SetLineStyle(2);
     rightLine->SetLineWidth(2);
 
-    Profile.second->Draw();
+    Profile.second->Draw("HIST");
 
     leftLine->Draw("same");  
     rightLine->Draw("same");
